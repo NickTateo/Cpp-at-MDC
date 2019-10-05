@@ -1,0 +1,760 @@
+/*
+Nicholas Tateo
+COP1334
+Final Project
+
+Extra Credit:
+-Controls work in real time
+-Obstacles on the field
+-Help/Controls screen viewable at any point during the game
+*/
+#include <iostream>
+#include <cstdlib>
+#include <windows.h>
+#include "color.h"
+#include <conio.h>
+#include <ctime>
+#include <vector>
+
+using namespace std;
+using namespace Petter;
+
+const int ROW = 20;
+const int COL = 30;
+const int STARTX = 14;
+const int STARTY = 9;
+const int RESOLVE = 5;
+const char PLAYERSPRITE = 234;
+const char BUGSPRITE = 232;
+const char EMPTYSPACE = 32;
+
+/* ! --- Shouldn't use non-const global variables */
+/* Game message output */
+string lastmessage = "";
+string midmessage = "";
+string newmessage = "";
+
+struct Board
+{
+    char theBoard[ROW][COL];
+
+    Board()
+    {
+        for(int r = 1; r < ROW-1; r++){
+            for(int c = 1; c < COL-1; c++){
+                theBoard[r][c] = EMPTYSPACE;
+            }
+        }
+        for(int i = 1; i < ROW-1; i++){
+            theBoard[i][0] = 186;
+            theBoard[i][COL-1] = 186;
+        }
+        for(int j = 1; j < COL-1; j++){
+            theBoard[0][j] = 205;
+            theBoard[ROW-1][j] = 205;
+        }
+
+        theBoard[0][0] = 201;
+        theBoard[ROW-1][0] = 200;
+        theBoard[0][COL-1] = 187;
+        theBoard[ROW-1][COL-1] = 188;
+    }
+
+    void printBoard()
+    {
+        system("cls");
+        cout << DKGREEN << "\t\tStomp The Palmetto Bugs" << endl;
+
+        for(int r = 0; r < ROW; r++){
+            for(int c = 0; c < COL; c++){
+                cout << GREEN << theBoard[r][c] << " ";
+            }
+            cout << '\n';
+        }
+
+        cout << lastmessage << endl;
+        cout << midmessage << endl;
+        cout << newmessage;
+    }
+
+    void setSpace(int x, int y, int value){
+        theBoard[y][x] = value;
+    }
+
+    bool canMoveTo(int x, int y, const char whatToCheck){
+        return theBoard[y][x] == whatToCheck;
+    }
+
+    char whatsThere(int x, int y){
+        return theBoard[y][x];
+    }
+
+    void buildObstacles(){
+        theBoard[4][4] = 'O';
+        theBoard[4][5] = 'O';
+        theBoard[4][6] = 'O';
+        theBoard[2][4] = 'O';
+        theBoard[2][5] = 'O';
+        theBoard[2][6] = 'O';
+        theBoard[3][4] = 'O';
+
+        theBoard[18][15] = 'O';
+        theBoard[16][20] = 'O';
+        theBoard[15][25] = 'O';
+        theBoard[15][23] = 'O';
+        theBoard[15][22] = 'O';
+
+        theBoard[8][10] = 'O';
+        theBoard[9][10] = 'O';
+        theBoard[10][10] = 'O';
+        theBoard[10][11] = 'O';
+        theBoard[10][12] = 'O';
+
+    }
+};
+
+void printMessage(string, Board *);
+
+struct movingBody{
+    Board * b;
+    int xpos = 0;
+    int ypos = 0;
+    bool isStunned = false;
+
+    movingBody(Board & gameBoard, int posX, int posY, const char sprite){
+        b = &gameBoard;
+        xpos = posX;
+        ypos = posY;
+        b->setSpace(xpos, ypos, sprite);
+    }
+
+    void stunState(bool isStun){
+        isStunned = isStun;
+    }
+
+    void moveBody(int xchange, int ychange, int sprite){
+        if(b->canMoveTo(xpos+xchange, ypos+ychange, EMPTYSPACE)){
+            b->setSpace(xpos, ypos, EMPTYSPACE);
+            xpos += xchange;
+            ypos += ychange;
+
+            b->setSpace(xpos, ypos, sprite);
+
+            b->printBoard();
+        }
+    }
+
+    void moveBody(int xchange, int ychange, int sprite, int lastSprite, bool noCheck){
+        b->setSpace(xpos, ypos, lastSprite);
+        xpos += xchange;
+        ypos += ychange;
+        b->setSpace(xpos, ypos, sprite);
+        b->printBoard();
+    }
+
+};
+
+struct Player :movingBody{
+
+    int resPts = RESOLVE;
+
+    Player(Board & gameBoard, int posX, int posY) : movingBody(gameBoard, posX, posY, PLAYERSPRITE){
+    }
+
+    void movePlayer(int x, int y){
+        moveBody(x, y, PLAYERSPRITE);
+    }
+
+    void loseGame(){
+        printMessage("Player: \"AHHHHHHHHH GET IT OFF ME!!!\"", b);
+        while(xpos < COL){
+            moveBody(1, 0, PLAYERSPRITE, EMPTYSPACE, false);
+        }
+        printMessage("GAME OVER", b);
+    }
+
+    void loseHealth(){
+        resPts--;
+        printMessage("You lost one Resolve Point!", b);
+        if(resPts == 0){
+            loseGame();
+        }
+    }
+
+    void runAway(){
+        int numSpaces = rand() % 6;
+        int direction = rand() % 8;
+
+        printMessage("You run away scared!", b);
+
+        for(int i = 0; i < numSpaces; i++){
+            switch(direction){
+                case 0:
+                    movePlayer(-1,-1);
+                break;
+                case 1:
+                    movePlayer(-1,0);
+                break;
+                case 2:
+                    movePlayer(-1,1);
+                break;
+                case 3:
+                    movePlayer(0,-1);
+                break;
+                case 4:
+                    movePlayer(0,1);
+                break;
+                case 5:
+                    movePlayer(1,-1);
+                break;
+                case 6:
+                    movePlayer(1,0);
+                break;
+                case 7:
+                    movePlayer(1,1);
+                break;
+            }
+        }
+    }
+
+    bool footStomp(int x, int y, int prob){
+        if(b->canMoveTo(xpos+x, ypos+y, EMPTYSPACE) || b->canMoveTo(xpos+x, ypos+y, BUGSPRITE)){
+            if((rand() % 100) <= prob){
+                char temp = ' ';
+                temp =  b->whatsThere(xpos+x, ypos+y);
+                moveBody(x, y, PLAYERSPRITE, EMPTYSPACE, false);
+                b->printBoard();
+                moveBody(-x, -y, PLAYERSPRITE, EMPTYSPACE, false);
+                if(temp == BUGSPRITE){
+                    return true;
+                }
+                b->printBoard();
+            }
+            else{
+                printMessage("Hypersonic Foot Stomp missed!", b);
+            }
+        }
+        else{
+            printMessage("Cannot stomp in that direction", b);
+        }
+        return false;
+    }
+
+    bool raid(int x, int y){
+        char temp = ' ';
+        temp =  b->whatsThere(xpos+x, ypos+y);
+        if(temp == BUGSPRITE){
+            if((rand() % 100) <= 68){
+                moveBody(x, y, PLAYERSPRITE, EMPTYSPACE, false);
+                b->printBoard();
+                moveBody(-x, -y, PLAYERSPRITE, temp, false);
+                b->printBoard();
+                return true;
+            }
+            else{
+                printMessage("Your Raid Spray missed!", b);
+            }
+        }
+        else{
+            printMessage("You sprayed raid at nothing", b);
+        }
+        return false;
+    }
+};
+
+struct stupidBug :movingBody{
+    bool isAlive = true;
+    bool isSmart = false;
+
+    stupidBug(Board & gameBoard, int posX, int posY) : movingBody(gameBoard, posX, posY, BUGSPRITE)
+    {
+    }
+
+    void moveBug(int x, int y){
+        moveBody(x, y, BUGSPRITE);
+    }
+
+    bool legAssault(int x, int y){
+        if(b->canMoveTo(xpos+x, ypos+y, EMPTYSPACE) || b->canMoveTo(xpos+x, ypos+y, PLAYERSPRITE)){
+            if((rand() % 100) <= 72){
+                char temp = ' ';
+                temp = b->whatsThere(xpos+x, ypos+y);
+                moveBody(x, y, BUGSPRITE, EMPTYSPACE, false);
+                b->printBoard();
+                moveBody(-x, -y, BUGSPRITE, temp, false);
+                if(temp == PLAYERSPRITE){
+                    return true;
+                }
+            }
+            else{
+                printMessage("Leg Crawl Assault missed!", b);
+            }
+        }
+        return false;
+    }
+
+    bool flyWings(int x, int y){
+        if(b->canMoveTo(xpos+x, ypos+y, EMPTYSPACE) || b->canMoveTo(xpos+x, ypos+y, PLAYERSPRITE)){
+            if((rand() % 100) <= 80){
+                char temp = ' ';
+                temp = b->whatsThere(xpos+x, ypos+y);
+                moveBody(x, y, BUGSPRITE, EMPTYSPACE, false);
+                b->printBoard();
+                moveBody(-x, -y, BUGSPRITE, temp, false);
+                if(temp == PLAYERSPRITE){
+                    return true;
+                    printMessage("The Bug's attack stunned you!", b);
+                }
+            }
+            else{
+                printMessage("Flying Wings of Death missed!", b);
+            }
+        }
+        return false;
+    }
+
+    void randAction(Player & p){
+        if(isAlive){
+            int prob = rand() % 20;
+
+            switch(prob){
+                case 0:
+                    if(legAssault(0,1)){
+                        p.loseHealth();
+                        p.runAway();
+                    }
+                break;
+
+                case 1:
+                    if(legAssault(0,-1)){
+                        p.loseHealth();
+                        p.runAway();
+                    }
+                break;
+
+                case 2:
+                    if(legAssault(1,0)){
+                        p.loseHealth();
+                        p.runAway();
+                    }
+                break;
+
+                case 3:
+                    if(legAssault(-1,0)){
+                        p.loseHealth();
+                        p.runAway();
+                    }
+                break;
+
+                case 4:
+                    if(flyWings(0,2)){
+                        p.isStunned = true;
+                        p.loseHealth();
+                    }
+                break;
+
+                case 5:
+                    if(flyWings(0,-2)){
+                        p.isStunned = true;
+                        p.loseHealth();
+                    }
+                break;
+
+                case 6:
+                    if(flyWings(2,0)){
+                        p.isStunned = true;
+                        p.loseHealth();
+                    }
+                break;
+
+                case 7:
+                    if(flyWings(-2,0)){
+                        p.isStunned = true;
+                        p.loseHealth();
+                    }
+                break;
+
+                case 8:
+                case 9:
+                case 10:
+                    moveBug(-1,0);
+                break;
+
+                case 11:
+                case 12:
+                case 13:
+                    moveBug(1,0);
+                break;
+
+                case 14:
+                case 15:
+                case 16:
+                    moveBug(0,-1);
+                break;
+
+                case 17:
+                case 18:
+                case 19:
+                    moveBug(0,1);
+                break;
+            }
+        }
+    }
+
+    bool isAt(int x, int y){
+        return (xpos == x) && (ypos == y);
+    }
+
+    void kill(){
+        isAlive = false;
+        b->setSpace(xpos, ypos, EMPTYSPACE);
+        printMessage("Palmetto Bug killed!", b);
+    }
+};
+
+struct smartBug :stupidBug{
+    bool isSmart = true;
+
+    smartBug(Board & gameBoard, int posX, int posY) : stupidBug(gameBoard, posX, posY)
+    {
+    }
+
+    void action(Player & p){
+        if(isAlive){
+            switch(p.xpos-xpos){
+                case 0:
+                    switch(p.ypos-ypos){
+                        case 1:
+                            if(legAssault(0,1)){
+                                p.loseHealth();
+                                p.runAway();
+                            }
+                        break;
+                        case 2:
+                            if(flyWings(0,2)){
+                                p.isStunned = true;
+                                p.loseHealth();
+                            }
+                        break;
+                        case -1:
+                            if(legAssault(0,-1)){
+                                p.loseHealth();
+                                p.runAway();
+                            }
+                        break;
+                        case -2:
+                            if(flyWings(0,-2)){
+                                p.isStunned = true;
+                                p.loseHealth();
+                            }
+                        break;
+                        default:
+                            if(p.ypos-ypos > 0){
+                                moveBug(0,1);
+                            }
+                            else{
+                                moveBug(0,-1);
+                            }
+                        break;
+                    }
+                break;
+                case 1:
+                    switch(p.ypos-ypos){
+                        case 0:
+                            if(legAssault(1,0)){
+                                p.loseHealth();
+                                p.runAway();
+                            }
+                        break;
+                        default:
+                            if(p.ypos-ypos > 0){
+                                moveBug(0,1);
+                            }
+                            else{
+                                moveBug(0,-1);
+                            }
+                        break;
+                    }
+                break;
+                case -1:
+                    switch(p.ypos-ypos){
+                        case 0:
+                            if(legAssault(-1,0)){
+                                p.loseHealth();
+                                p.runAway();
+                            }
+                        break;
+                        default:
+                            if(p.ypos-ypos > 0){
+                                moveBug(0,1);
+                            }
+                            else{
+                                moveBug(0,-1);
+                            }
+                        break;
+                    }
+                break;
+                case 2:
+                    switch(p.ypos-ypos){
+                        case 0:
+                            if(flyWings(2,0)){
+                                p.isStunned = true;
+                                p.loseHealth();
+                            }
+                        break;
+                        default:
+                            if(p.ypos-ypos > 0){
+                                moveBug(0,1);
+                            }
+                            else{
+                                moveBug(0,-1);
+                            }
+                        break;
+                    }
+                break;
+                case -2:
+                    switch(p.ypos-ypos){
+                        case 0:
+                            if(flyWings(-2,0)){
+                                p.isStunned = true;
+                                p.loseHealth();
+                            }
+                        break;
+                        default:
+                            if(p.ypos-ypos > 0){
+                                moveBug(0,1);
+                            }
+                            else{
+                                moveBug(0,-1);
+                            }
+                        break;
+                    }
+                break;
+                default:
+                    int prob = rand() % 100;
+                    if(prob < 50){
+                        randAction(p);
+                    }
+                    else{
+                        if(p.xpos-xpos > 0){
+                            moveBug(1,0);
+                        }
+                        else{
+                            moveBug(-1,0);
+                        }
+                    }
+                break;
+            }
+
+        }
+    }
+};
+
+void printInstructions();
+int isBugThere(vector<stupidBug *> *, int, int);
+void killBug(Player &, vector<stupidBug *> *, int, int);
+void stunBug(Player &, vector<stupidBug *> *, int, int, Board * b);
+
+int main()
+{
+    srand(time(0));
+
+    Board aBoard;
+    aBoard.buildObstacles();
+    Player thePlayer(aBoard, STARTX, STARTY);
+
+    vector<stupidBug *> dumbBugs;
+    vector<stupidBug *> * theBugs = &dumbBugs;
+
+    printInstructions();
+
+    aBoard.printBoard();
+
+    char a = ' ';
+    int turnCounter = 0;
+
+    while(toupper(a) != 'P'){
+        a = getch();
+        if(!thePlayer.isStunned){
+            switch(a){
+                case 'W':
+                    stunBug(thePlayer, theBugs, 0, -1, &aBoard);
+                break;
+
+                case 'A':
+                    stunBug(thePlayer, theBugs, -1, 0, &aBoard);
+                break;
+
+                case 'S':
+                    stunBug(thePlayer, theBugs, 0, 1, &aBoard);
+                break;
+
+                case 'D':
+                    stunBug(thePlayer, theBugs, 1, 0, &aBoard);
+                break;
+
+                case 'd':
+                    thePlayer.movePlayer(1, 0);
+                break;
+
+                case 'w':
+                    thePlayer.movePlayer(0, -1);
+                break;
+
+                case 'a':
+                    thePlayer.movePlayer(-1, 0);
+                break;
+
+                case 's':
+                    thePlayer.movePlayer(0, 1);
+                break;
+
+                case 'q':
+                    thePlayer.movePlayer(-1, -1);
+                break;
+
+                case 'e':
+                    thePlayer.movePlayer(1, -1);
+                break;
+
+                case 'z':
+                    thePlayer.movePlayer(-1, 1);
+                break;
+
+                case 'c':
+                    thePlayer.movePlayer(1, 1);
+                break;
+
+                case '8':
+                    killBug(thePlayer, theBugs, 0, -1);
+                break;
+
+                case '4':
+                    killBug(thePlayer, theBugs, -1, 0);
+                break;
+
+                case '2':
+                    killBug(thePlayer, theBugs, 0, 1);
+                break;
+
+                case '6':
+                    killBug(thePlayer, theBugs, 1, 0);
+                break;
+
+                case 'h':
+                    system("Cls");
+                    printInstructions();
+                    turnCounter--;
+                break;
+
+                default:
+                    turnCounter--;
+                break;
+            }
+        }
+        turnCounter++;
+        if(turnCounter >= 2){
+            thePlayer.isStunned = false;
+
+            if(dumbBugs.size() < 5){
+                if((rand() % 100) < 15){
+                    dumbBugs.push_back(new smartBug(aBoard, COL-2-(rand()%5), 1+(rand()%5)));
+                }
+                else if(rand() % 100 < 33){
+                    dumbBugs.push_back(new stupidBug(aBoard, 1+(rand()%5), ROW-2-(rand()%5)));
+                }
+            }
+
+            for(int i = 0; i < dumbBugs.size(); i++){
+                if(dumbBugs.at(i)->isStunned){
+                    dumbBugs.at(i)->isStunned = false;
+                }
+                else{
+                    if(static_cast<smartBug*>(dumbBugs.at(i))->isSmart){
+                        static_cast<smartBug*>(dumbBugs.at(i))->action(thePlayer);
+                        static_cast<smartBug*>(dumbBugs.at(i))->action(thePlayer);
+                    }
+                    else{
+                        dumbBugs.at(i)->randAction(thePlayer);
+                        dumbBugs.at(i)->randAction(thePlayer);
+                    }
+                }
+            }
+            turnCounter = 0;
+        }
+    }
+
+    return 0;
+}
+
+void printInstructions(){
+    cout << WHITE << "\tGAME INFO (Read before starting!):"
+        << "\nSTOMP THE PALMETTO BUGS:\n-Your house is overrun with a swarm of bugs that must be eliminated\n\t"
+        << PLAYERSPRITE << " <= this is the player (you)\n\t"
+        << BUGSPRITE << " <= this is a Palmetto Bug \n\t"
+        << "O <= these are obstacles in the house that provide cover"
+        << "\n-You have five Resolve Points. When you lose them all you lose the game"
+        << "\n-WASD for movement"
+        << "\n-QEZC for diagonal movement"
+        << "\n-8,4,5,6 to use Hypersonic Foot Stomp in each direction, respectively"
+        << "\n-SHIFT+WASD to use Raid Spray in each direction, respectively"
+        << "\n-Press \"H\" at any time to view this information"
+        << "\n-Press \"G\" to close this info and continue to the game"
+        << "\n-Press \"P\" to quit the game"
+        << endl;
+    do{}
+    while(toupper(getch()) != 'G');
+    cout << "Perform any action to continue";
+}
+
+void printMessage(string nMess, Board * b){
+    lastmessage = midmessage;
+    midmessage = newmessage;
+    newmessage = nMess;
+    b->printBoard();
+}
+
+int isBugThere(vector<stupidBug *> * bugs, int x, int y){
+    for(int i = 0; i < bugs->size(); i++){
+        if((bugs->at(i)->isAt(x,y))){
+            return i;
+        }
+    }
+    return -1;
+}
+
+void killBug(Player & p, vector<stupidBug *> * bugs, int x, int y){
+    int index = -2;
+    index = isBugThere(bugs, p.xpos+x, p.ypos+y);
+    if(index >= 0){
+        if(bugs->at(index)->isStunned){
+            if(p.footStomp(x, y, 90)){
+                bugs->at(index)->kill();
+                bugs->erase(bugs->begin()+index);
+            }
+        }
+        else{
+            if(p.footStomp(x, y, 60)){
+                bugs->at(index)->kill();
+                bugs->erase(bugs->begin()+index);
+            }
+        }
+    }
+    else{
+        p.footStomp(x, y, 60);
+    }
+}
+
+void stunBug(Player & p, vector<stupidBug *> * bugs, int x, int y, Board * b){
+    int index = -2;
+    index = isBugThere(bugs, p.xpos+x, p.ypos+y);
+    if(index >= 0){
+        if(p.raid(x, y)){
+            bugs->at(index)->stunState(true);
+            printMessage("Bug Stunned!", b);
+        }
+    }
+    else{
+        p.raid(x, y);
+    }
+}

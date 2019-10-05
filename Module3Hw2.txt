@@ -1,0 +1,73 @@
+/*
+Nicholas Tateo
+COP1334
+Module3HW2
+*/
+
+#include <iostream>
+
+using namespace std;
+
+double getSales(string);
+void findHighest(double, double, double, double, string, string, string, string);
+
+int main()
+{
+    double NEsales = -1;
+    double SEsales = -1;
+    double NWsales = -1;
+    double SWsales = -1;
+    string nEast = "Northeast";
+    string sEast = "Southeast";
+    string nWest = "Northwest";
+    string sWest = "Southwest";
+
+    NEsales = getSales(nEast);
+    SEsales = getSales(sEast);
+    NWsales = getSales(nWest);
+    SWsales = getSales(sWest);
+
+    findHighest(NEsales, SEsales, NWsales, SWsales, nEast, sEast, nWest, sWest);
+
+    return 0;
+}
+
+double getSales(string division){
+    double sales = -1;
+
+    do
+    {
+        cout << "Enter "<< division << "'s quarterly sales: ";
+        cin >> sales;
+        if(cin.fail() || !(sales > 0))
+        {
+            cout << "Error, sales must be 0 or larger" << endl;
+            sales = -1;
+        }
+        cin.clear();
+        cin.ignore(1000, '\n');
+    }
+    while(sales <= 0);
+
+    return sales;
+}
+
+void findHighest(double ne, double se, double nw, double sw, string northE, string southE, string northW, string southW){
+    double highest = ne;
+    string nameofHighest = northE;
+
+    if(se>highest){
+        highest = se;
+        nameofHighest = southE;
+    }
+    if(nw>highest){
+        highest = nw;
+        nameofHighest = northW;
+    }
+    if(sw>highest){
+        highest = sw;
+        nameofHighest = southW;
+    }
+
+    cout << nameofHighest << " has the largest sales with $" << highest << endl;
+}

@@ -1,0 +1,131 @@
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+bool isProduction();
+int getUserNum(int, int);
+void fillArrayRange(int[], int);
+void fillArrayRand(int[], int);
+void searchArray(int[], int, int);
+void printElement(int, int, int);
+
+int main()
+{
+    int userNumber = 0;
+    const int arraySize = 20;
+    int userHigh = 0;
+    int userLow = 0;
+
+    int numbers[arraySize];
+
+    srand(time(0));
+
+    if(isProduction())
+    {
+        fillArrayRand(numbers, arraySize);
+        userLow = 1;
+        userHigh = 1000;
+    }
+    else
+    {
+        fillArrayRange(numbers, arraySize);
+        userLow = 1;
+        userHigh = 20;
+    }
+
+    userNumber = getUserNum(userLow, userHigh);
+    searchArray(numbers, arraySize, userNumber);
+
+    return 0;
+}
+
+bool isProduction()
+{
+    char input = ' ';
+
+    do
+    {
+        cout << "Run in [T]est or [P]roduction:" << endl;
+        cin >> input;
+        if(cin.fail())
+        {
+            cin.clear();
+            input = ' ';
+        }
+        else if(input != 'P' && input != 'T' && input != 'p' && input != 't')
+        {
+            cin.clear();
+            input = ' ';
+        }
+        cin.ignore(10000, '\n');
+    }
+    while(input == ' ');
+
+    if(input == 'P' || input == 'p')
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+int getUserNum(int lo, int hi)
+{
+    int num = -1;
+
+    do
+    {
+        cout << "Enter a test value from: " << lo << " to " << hi << ": ";
+        cin >> num;
+        if(cin.fail())
+        {
+            cin.clear();
+            num = -1;
+        }
+        else if(num < lo || num > hi)
+        {
+            num = -1;
+        }
+        cin.ignore(10000, '\n');
+    }
+    while(num == -1);
+
+    return num;
+}
+
+void fillArrayRange(int num[], int arrSize)
+{
+    for(int i = 0; i < arrSize; i++)
+    {
+        num[i] = i+1;
+    }
+}
+
+void fillArrayRand(int num[], int arrSize)
+{
+    for(int i = 0; i < arrSize; i++)
+    {
+        num[i] = rand();
+    }
+}
+
+void searchArray(int nums[], int arrSize, int userNum)
+{
+    for(int i = 0; i < arrSize; i++)
+    {
+        if(nums[i] > userNum)
+        {
+            printElement(i, nums[i], userNum);
+        }
+    }
+}
+
+void printElement(int index, int value, int usNum)
+{
+    cout << "Location: " << index << " Value: " << value << endl;
+}
+

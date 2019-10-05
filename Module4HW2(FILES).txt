@@ -1,0 +1,170 @@
+/*
+Nicholas Tateo
+COP1334
+Module4HW2
+*/
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+
+using namespace std;
+
+void getInfoFromFile(char[][30], const int, const int);
+void calcWeather(int[], char, char[][30], const int, const int);
+int highestRainfall(char[][30], string &, const int, const int);
+void printMonthReport(int, int, int , int);
+void printReport(int, string, int[], int[], int[], const int);
+
+int main()
+{
+    const int NUMMO = 3;
+    const int NUMDAYS = 30;
+
+    int highestRain = 0;
+    string rainyMonth = "";
+
+    int numRainy[NUMMO] = {0};
+    int numCloudy[NUMMO] = {0};
+    int numSunny[NUMMO] = {0};
+
+    char weatherData[NUMMO][NUMDAYS];
+
+
+    for(int r = 0; r < NUMMO; r++)
+    {
+        for(int c = 0; c < NUMDAYS; c++)
+        {
+            weatherData[r][c] = ' ';
+        }
+    }
+
+    getInfoFromFile(weatherData, NUMMO, NUMDAYS);
+
+    calcWeather(numRainy, 'R', weatherData, NUMMO, NUMDAYS);
+    calcWeather(numCloudy, 'C', weatherData, NUMMO, NUMDAYS);
+    calcWeather(numSunny, 'S', weatherData, NUMMO, NUMDAYS);
+
+    highestRain = highestRainfall(weatherData, rainyMonth, NUMMO, NUMDAYS);
+
+    printReport(highestRain, rainyMonth, numRainy, numCloudy, numSunny, NUMMO);
+
+    return 0;
+}
+
+void getInfoFromFile(char data[][30], const int MOS, const int DAYS)
+{
+    ifstream inData;
+    inData.open("RainOrShine.txt");
+
+    for(int r = 0; r < MOS; r++)
+    {
+        for(int c = 0; c < DAYS; c++)
+        {
+            inData >> data[r][c];
+            inData.clear();
+        }
+    }
+
+    inData.close();
+}
+
+void calcWeather(int counter[], char weather, char data[][30], const int MOS, const int DAYS)
+{
+    for(int r = 0; r < MOS; r++)
+    {
+        for(int c = 0; c < DAYS; c++)
+        {
+            if(data[r][c] == weather)
+            {
+                counter[r]++;
+            }
+        }
+    }
+}
+
+int highestRainfall(char data[][30], string & highMonth, const int MOS, const int DAYS)
+{
+    int index = 0;
+    int counter = 0;
+    int highest = 0;
+
+    for(int r = 0; r < MOS; r++)
+    {
+        for(int c = 0; c < DAYS; c++)
+        {
+            if(data[r][c] == 'R')
+            {
+                counter++;
+            }
+        }
+        if(counter > highest)
+        {
+            highest = counter;
+            index = r;
+        }
+        counter = 0;
+    }
+
+    switch(index)
+    {
+    case 0:
+        highMonth = "June";
+        break;
+    case 1:
+        highMonth = "July";
+        break;
+    case 2:
+        highMonth = "August";
+        break;
+    }
+
+    return highest;
+}
+
+void printMonthReport(int month, int rain, int cloud, int sun)
+{
+    string mo = "";
+
+    switch(month)
+    {
+    case 0:
+        mo = "June";
+        break;
+    case 1:
+        mo = "July";
+        break;
+    case 2:
+        mo = "August";
+        break;
+    }
+
+    cout << left << setw(10) << mo << setw(10) << rain << setw(10) << cloud << setw(10) << sun << endl;
+}
+
+void printReport(int hiRain, string hiMo, int rain[], int cloud[], int sun[], const int MOS)
+{
+    int totals[3] = {0};
+
+    for(int i = 0; i < MOS; i++)
+    {
+        totals[0] += rain[i];
+    }
+    for(int i = 0; i < MOS; i++)
+    {
+        totals[1] += cloud[i];
+    }
+    for(int i = 0; i < MOS; i++)
+    {
+        totals[2] += sun[i];
+    }
+
+    cout << setw(10) << " " << "Rainy" << setw(10) << "Cloudy" << setw(10) << "Sunny" << endl;
+
+    for(int i = 0; i < MOS; i++)
+    {
+        printMonthReport(i, rain[i], cloud[i], sun[i]);
+    }
+
+    cout << left << setw(10) << "Total " << setw(10) << totals[0] << setw(10) << totals[1] << setw(10) << totals[2] << endl;
+    cout << "The rainiest month is: " << hiMo << " with " << hiRain << " amount of rain." << endl;
+}

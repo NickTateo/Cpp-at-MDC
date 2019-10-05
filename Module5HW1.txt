@@ -1,0 +1,93 @@
+#include <iostream>
+
+using namespace std;
+
+void validatePass(const int);
+bool hasLength(string, const int);
+bool hasCase(string);
+bool hasDigit(string);
+
+int main()
+{
+    const int reqLength = 6;
+
+    validatePass(reqLength);
+
+    return 0;
+}
+
+void validatePass(const int leng)
+{
+    string pass = "";
+
+    do
+    {
+        cout << "Enter a password: ";
+        getline(cin, pass);
+        if(cin.fail())
+        {
+            cin.clear();
+            pass = "";
+        }
+    }
+    while(pass == "");
+
+    if(hasLength(pass, leng)){
+        if(hasCase(pass)){
+            if(hasDigit(pass)){
+                cout << "Password is valid"<< endl;
+            }
+        }
+    }
+}
+
+bool hasLength(string data, const int len)
+{
+    bool longEnough = data.length() >= len;
+
+    if(!longEnough){
+        cout << "Password must be at least 6 characters long" << endl;
+    }
+
+    return longEnough;
+}
+
+bool hasCase(string data){
+    bool hasLower = false;
+    bool hasUpper = false;
+    int counter = 0;
+
+    while((!hasLower || !hasUpper) && counter < data.length()){
+        if(!hasLower){
+            hasLower = islower(data[counter]);
+        }
+        if(!hasUpper){
+            hasUpper = isupper(data[counter]);
+        }
+        counter++;
+    }
+
+    if(!(hasLower && hasUpper)){
+        cout << "Password must contain at least one uppercase and at least one lowercase letter" << endl;
+    }
+
+    return (hasLower && hasUpper);
+}
+
+bool hasDigit(string data){
+    bool hasDig = false;
+    int counter = 0;
+
+    while(!hasDig && counter < data.length()){
+        if(isdigit(data[counter])){
+            hasDig = true;
+        }
+        counter++;
+    }
+
+    if(!hasDig){
+        cout << "Password must contain at least one digit" << endl;
+    }
+
+    return hasDig;
+}

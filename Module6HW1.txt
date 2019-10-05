@@ -1,0 +1,148 @@
+/*
+Nicholas Tateo
+COP1334
+Module6HW1
+*/
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+
+using namespace std;
+
+const int NUMMONTHS = 12;
+
+struct weatherData{
+    string month;
+    double totalRain ;
+    double hiTemp;
+    double loTemp;
+    double avgTemp;
+
+    weatherData(){
+        month = "";
+        totalRain = -1;
+        hiTemp = -1;
+        loTemp = -1;
+        avgTemp = -1;
+    }
+    weatherData(string mo, double tR, double hT, double lT, double aT){
+        month = mo;
+        totalRain = tR;
+        hiTemp = hT;
+        loTemp = lT;
+        avgTemp = aT;
+    }
+
+};
+
+void fillArray(weatherData[], const int);
+double sumRain(weatherData[]);
+double calcAvgRain(weatherData[]);
+double calcAvgTemp(weatherData[]);
+void findHiTemp(weatherData[], double &, string &);
+void findLoTemp(weatherData[], double &, string &);
+
+int main()
+{
+    const int NUMMONTHS = 12;
+    double totalRain = -1;
+    double yrAvgRn = -1;
+    double yrAvgTemp = -1;
+    double hiTemp = -1;
+    double loTemp = -1;
+    string hiMonth = "";
+    string loMonth = "";
+
+    weatherData annWeather[NUMMONTHS];
+
+    fillArray(annWeather, NUMMONTHS);
+
+    totalRain = sumRain(annWeather);
+    yrAvgRn = calcAvgRain(annWeather);
+    yrAvgTemp = calcAvgTemp(annWeather);
+    findHiTemp(annWeather, hiTemp, hiMonth);
+    findLoTemp(annWeather, loTemp, loMonth);
+
+    cout << "Annual Rain Analysis" << endl;
+    cout << setw(25) << left << setprecision(2) << fixed << "Total Rain: " << setw(10) << right << totalRain << endl;
+    cout << setw(25) << left << setprecision(2) << fixed << "Average Rain: " << setw(10) << right << yrAvgRn << endl;
+    cout << setw(25) << left << setprecision(2) << fixed << "Average of average rain: " << setw(10) << right << yrAvgTemp << endl;
+    cout << setprecision(2) << fixed << "The highest temp is: " << hiTemp << " in " << hiMonth << endl;
+    cout << setprecision(2) << fixed << "The Lowest temp is: " << loTemp << " in " << loMonth << endl;
+
+
+
+    return 0;
+}
+
+
+void fillArray(weatherData data[], const int sizeData){
+    ifstream inData;
+    inData.open("input.txt");
+
+    string mo = "";
+    int tR = -1;
+    int hT = -1;
+    int lT = -1;
+    int aT = -1;
+
+    for(int i = 0; i < sizeData; i++){
+        inData >> mo;
+        inData >> tR;
+        inData >> hT;
+        inData >> lT;
+        inData >> aT;
+
+        data[i] = weatherData(mo, tR, hT, lT, aT);
+    }
+
+    inData.close();
+}
+
+double sumRain(weatherData data[]){
+    double total = 0;
+
+    for(int i = 0; i < NUMMONTHS; i++){
+        total += data[i].totalRain;
+    }
+
+    return total;
+}
+
+double calcAvgRain(weatherData data[]){
+    double total = 0;
+
+    for(int i = 0; i < NUMMONTHS; i++){
+        total += data[i].totalRain;
+    }
+
+    return total/NUMMONTHS;
+}
+
+double calcAvgTemp(weatherData data[]){
+    double total = 0;
+
+    for(int i = 0; i < NUMMONTHS; i++){
+        total += data[i].avgTemp;
+    }
+
+    return total/NUMMONTHS;
+}
+
+void findHiTemp(weatherData data[], double &highT, string &highMo){
+    for(int i = 0; i < NUMMONTHS; i++){
+        if(data[i].hiTemp > highT){
+            highT = data[i].hiTemp;
+            highMo = data[i].month;
+        }
+    }
+}
+
+void findLoTemp(weatherData data[], double &lowT, string &lowMo){
+    for(int i = 0; i < NUMMONTHS; i++){
+        if(data[i].loTemp < lowT){
+            lowT = data[i].loTemp;
+            lowMo = data[i].month;
+        }
+    }
+}
